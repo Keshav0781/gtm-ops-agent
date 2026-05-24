@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from api.middleware.logging import RequestLoggingMiddleware
 
 # Load environment variables first — before anything else
 load_dotenv()
@@ -65,24 +66,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    """
-    Logs every request — method, path, time taken.
-    At Siemens this goes to Azure Monitor.
-    For us it goes to console and LangSmith.
-    """
-    start_time = time.time()
-    response = await call_next(request)
-    duration = time.time() - start_time
-
-    logger.info(
-        f"{request.method} {request.url.path} "
-        f"- Status: {response.status_code} "
-        f"- Duration: {duration:.3f}s"
-    )
-    return response
+# Professional request logging middleware
+# Adds unique request ID to every request
+# At Siemens this enables end-to-end tracing
+app.add_middleware(RequestLoggingMiddleware)
 
 
 @app.get("/", tags=["Root"])
