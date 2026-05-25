@@ -3,13 +3,14 @@ GTM Ops Agent - Main Application Entry Point
 """
 
 import logging
-import time
+
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from api.middleware.logging import RequestLoggingMiddleware
+from api.routers import leads
 
 # Load environment variables first — before anything else
 load_dotenv()
@@ -70,6 +71,13 @@ app.add_middleware(
 # Adds unique request ID to every request
 # At Siemens this enables end-to-end tracing
 app.add_middleware(RequestLoggingMiddleware)
+
+# ==========================================
+# Register routers
+# Each agent gets its own router
+# At Siemens each service has dedicated routers
+# ==========================================
+app.include_router(leads.router)
 
 
 @app.get("/", tags=["Root"])
