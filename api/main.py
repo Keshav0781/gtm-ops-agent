@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from api.middleware.logging import RequestLoggingMiddleware
-from api.routers import leads, emails
+from api.routers import leads, emails, meetings
 
 # Load environment variables first — before anything else
 load_dotenv()
@@ -79,6 +79,7 @@ app.add_middleware(RequestLoggingMiddleware)
 # ==========================================
 app.include_router(leads.router)
 app.include_router(emails.router)
+app.include_router(meetings.router)
 
 
 @app.get("/", tags=["Root"])

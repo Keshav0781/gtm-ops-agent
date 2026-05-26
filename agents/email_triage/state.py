@@ -6,11 +6,6 @@ Shared notebook flowing through all 4 nodes.
 Flow:
 classify_email → extract_context → 
 draft_reply → route_email
-
-At Siemens similar state patterns are used
-for clinical document routing workflows
-where emails are replaced by patient referrals
-and routing targets are clinical departments.
 """
 
 from typing import Optional
