@@ -1,0 +1,148 @@
+{
+  "name": "Meeting Intelligence",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meeting-intelligence",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "69aab135-078d-448c-94ab-faa6ba6fa534",
+      "name": "Webhook",
+      "webhookId": "075e154b-5e46-46be-97bb-5bc33f24771f"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/meetings/analyze",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"meeting_title\": \"{{ $('Webhook').item.json.body.meeting_title }}\",\n  \"meeting_date\": \"{{ $('Webhook').item.json.body.meeting_date }}\",\n  \"attendees\": \"{{ $('Webhook').item.json.body.attendees }}\",\n  \"transcript\": \"{{ $('Webhook').item.json.body.transcript }}\",\n  \"duration_minutes\": \"{{ $('Webhook').item.json.body.duration_minutes }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "016dd5cb-0fe6-4c9c-89ce-ee0eb5afc4b6",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9a4360ae-c3d6-431b-bb15-5d625a951467",
+              "leftValue": "={{ $json.completed }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "58d0e124-620f-4342-b59f-8a00f263bc08",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "meetings",
+          "mode": "name"
+        },
+        "text": "={{ $json.slack_message }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "0347d075-fb84-46f8-8b9f-324335d6d284",
+      "name": "Send a message",
+      "webhookId": "1c2a9fff-f30f-49ae-9a18-7d890c406619",
+      "credentials": {
+        "slackApi": {
+          "id": "9QXgV7liti5pyugw",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b1654e1a-1f0d-4cdf-bcdc-f30180f4ee73",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "12bc553de0ce4624c81d89e5ef5f0ca10f24e2e6a624bad58c261dc9341df513"
+  },
+  "id": "Se3Z1ywtJZyHQmSL",
+  "tags": []
+}
