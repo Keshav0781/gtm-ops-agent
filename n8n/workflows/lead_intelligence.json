@@ -1,0 +1,147 @@
+{
+  "name": "Lead Intelligence",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intelligence",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a0c3a7f5-f12c-4080-998d-e9c89409fa40",
+      "name": "Webhook",
+      "webhookId": "b8e9ded2-7a00-445f-9281-1853f3a77d48"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/leads/analyze",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"company_name\": \"{{ $('Webhook').item.json.body.company_name }}\",\n  \"contact_name\": \"{{ $('Webhook').item.json.body.contact_name }}\",\n  \"contact_email\": \"{{ $('Webhook').item.json.body.contact_email }}\",\n  \"message\": \"{{ $('Webhook').item.json.body.message }}\",\n  \"source\": \"{{ $('Webhook').item.json.body.source }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "4e481138-5508-4dc6-953e-958deda62b34",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f58fa275-44f9-4704-ac8a-3c16d8d040a3",
+              "leftValue": "={{ $json.score }}",
+              "rightValue": "LOW",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "2db3f507-e845-4ad6-8ed2-08a48eb79104",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "sales-leads",
+          "mode": "name"
+        },
+        "text": "=🚨 New Lead Alert\n\nCompany: {{ $('HTTP Request').item.json.company_name }}\nIndustry: {{ $('HTTP Request').item.json.industry }}\nCompany Size: {{ $('HTTP Request').item.json.company_size }}\nScore: {{ $('HTTP Request').item.json.score }}\nReasoning: {{ $('HTTP Request').item.json.score_reasoning }}\n\nEmail Subject: {{ $('HTTP Request').item.json.draft_email_subject }}\n\nDrafted Email:\n{{ $('HTTP Request').item.json.draft_email_body }}\n\nPlease review and approve before sending.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "513e2ec3-e171-449c-a562-113314cccb5b",
+      "name": "Send a message",
+      "webhookId": "f0ee3650-bf2a-4c56-b289-b8730c4b897a",
+      "credentials": {
+        "slackApi": {
+          "id": "9QXgV7liti5pyugw",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fb5cfb58-e057-4650-96d7-b9d5b3d7acf5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "12bc553de0ce4624c81d89e5ef5f0ca10f24e2e6a624bad58c261dc9341df513"
+  },
+  "id": "6BJYsN64L0Y9WzE9",
+  "tags": []
+}
