@@ -1,0 +1,147 @@
+{
+  "name": "Email Triage",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email-triage",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f9620f6c-03ff-4855-8924-b156e4f6f8f4",
+      "name": "Webhook",
+      "webhookId": "91dc4015-52d2-45b1-8bb2-b473e2e8c09b"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/emails/triage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sender_email\": \"{{ $('Webhook').item.json.body.sender_email }}\",\n  \"sender_name\": \"{{ $('Webhook').item.json.body.sender_name }}\",\n  \"subject\": \"{{ $('Webhook').item.json.body.subject }}\",\n  \"body\": \"{{ $('Webhook').item.json.body.body }}\",\n  \"received_at\": \"{{ $('Webhook').item.json.body.received_at }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6d2219bc-cf1a-4f9e-b886-c26bbe91ab66",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c86ecfaa-52d2-4ef7-930e-ef92214f4a8b",
+              "leftValue": "={{ $json.classification }}",
+              "rightValue": "spam",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "0fdee72b-8dd0-4ac6-a1ca-73f778196b02",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "email-triage",
+          "mode": "name"
+        },
+        "text": "=📧 New Email Received  Classification: {{ $json.classification }} Priority: {{ $json.priority }} Sender Company: {{ $json.sender_company }} Core Request: {{ $json.core_request }} Route To: {{ $json.route_to }}  Draft Reply Subject: {{ $json.draft_reply_subject }}  Draft Reply: {{ $json.draft_reply_body }}  Please review and approve before sending.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "062b24fe-3344-4bae-a805-9b34daea5cca",
+      "name": "Send a message",
+      "webhookId": "5b83252d-a33c-4916-943a-b8d2273bb83a",
+      "credentials": {
+        "slackApi": {
+          "id": "9QXgV7liti5pyugw",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1c6af1f3-1735-44c3-8403-333ca1a406cf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "12bc553de0ce4624c81d89e5ef5f0ca10f24e2e6a624bad58c261dc9341df513"
+  },
+  "id": "gFYQmOdG8QZbIwoo",
+  "tags": []
+}
