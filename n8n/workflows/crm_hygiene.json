@@ -1,0 +1,151 @@
+{
+  "name": "CRM Hygiene",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ea02043f-a5ca-4fb6-802b-0f54db83bfd3",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/crm/analyze",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"deals\": [\n    {\n      \"deal_id\": \"D001\",\n      \"deal_name\": \"BMW Analytics Deal\",\n      \"company\": \"BMW\",\n      \"owner\": \"Thomas\",\n      \"stage\": \"Proposal\",\n      \"deal_value\": 50000,\n      \"last_contact_date\": \"2026-04-01\",\n      \"stage_changed_date\": \"2026-04-01\"\n    },\n    {\n      \"deal_id\": \"D002\",\n      \"deal_name\": \"Siemens Integration\",\n      \"company\": \"Siemens\",\n      \"owner\": \"Sarah\",\n      \"stage\": \"Negotiation\",\n      \"deal_value\": 120000,\n      \"last_contact_date\": \"2026-03-15\",\n      \"stage_changed_date\": \"2026-03-10\"\n    }\n  ],\n  \"scan_date\": \"2026-05-28\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "74d16e3f-957a-4a8b-9eb5-b72063027ac6",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "418fa185-9251-43f4-b9aa-42f4bd0a9c36",
+              "leftValue": "={{ $json.completed }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "8827389a-dd9a-4624-afbe-223e800d5943",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "crm_alert",
+          "mode": "name"
+        },
+        "text": "=🔔 CRM Hygiene Report  {{ $json.scan_summary }}  Total Deals: {{ $json.total_deals_count }} Problematic: {{ $json.problematic_deals_count }} High Priority Alerts: {{ $json.high_priority_count }} Medium Priority Alerts: {{ $json.medium_priority_count }}  Please review deals and take action.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "5f2e902d-2ab3-4489-8161-156a4c0d72b7",
+      "name": "Send a message",
+      "webhookId": "0572ea48-7ad6-4bc5-8857-7e487e69bae9",
+      "credentials": {
+        "slackApi": {
+          "id": "9QXgV7liti5pyugw",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "513dc8d3-24a6-4eae-93c5-90c8cf64b41f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "12bc553de0ce4624c81d89e5ef5f0ca10f24e2e6a624bad58c261dc9341df513"
+  },
+  "id": "LBko1EVdivCcDRiU",
+  "tags": []
+}
