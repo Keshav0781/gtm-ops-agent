@@ -213,3 +213,54 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_created_at
     ON agent_audit_log(created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_log_human_approved 
     ON agent_audit_log(human_approved);
+
+
+
+-- ============================================
+-- Table 7 — HR Onboarding
+-- Stores onboarding requests and state
+-- Allows /hr/provision to retrieve full state
+-- using request_id after manager approves
+-- ============================================
+CREATE TABLE IF NOT EXISTS hr_onboarding (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    
+    -- Request tracking
+    request_id VARCHAR(20) UNIQUE NOT NULL,
+    
+    -- Employee information
+    employee_name VARCHAR(255),
+    employee_email VARCHAR(255),
+    role VARCHAR(100),
+    department VARCHAR(100),
+    start_date VARCHAR(100),
+    manager_name VARCHAR(255),
+    office_location VARCHAR(255),
+    
+    -- Provisioning plan
+    systems_to_provision JSONB,
+    slack_channels JSONB,
+    drive_folder_path VARCHAR(500),
+    requires_github BOOLEAN DEFAULT FALSE,
+    requires_figma BOOLEAN DEFAULT FALSE,
+    provisioning_plan_summary TEXT,
+    
+    -- Status
+    approval_sent BOOLEAN DEFAULT FALSE,
+    approved BOOLEAN DEFAULT FALSE,
+    provisioning_complete BOOLEAN DEFAULT FALSE,
+    
+    -- Results
+    drive_folder_created BOOLEAN DEFAULT FALSE,
+    drive_folder_url VARCHAR(500),
+    calendar_shared BOOLEAN DEFAULT FALSE,
+    slack_invited BOOLEAN DEFAULT FALSE,
+    welcome_email_sent BOOLEAN DEFAULT FALSE,
+    
+    -- Metadata
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_hr_onboarding_request_id
+    ON hr_onboarding(request_id);

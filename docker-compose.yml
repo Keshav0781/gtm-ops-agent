@@ -1,11 +1,7 @@
-# ============================================
 # GTM Ops Agent - Docker Compose
 # Local development environment
 # Starts API + n8n + PostgreSQL together
 # Same concept as Siemens local dev setup
-# ============================================
-
-version: '3.8'
 
 services:
 
@@ -24,8 +20,6 @@ services:
     environment:
       - APP_ENV=development
     volumes:
-      # Mount code for live reload in development
-      # Same approach Siemens uses locally
       - .:/app
     depends_on:
       - postgres
@@ -49,23 +43,16 @@ services:
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - WEBHOOK_URL=http://localhost:5678
-      # Connect n8n to our API
-      - GTM_API_URL=http://api:8000
+      - GTM_API_URL=http://host.docker.internal:8000
     volumes:
-      # Store n8n data and workflows persistently
       - n8n_data:/home/node/.n8n
-      # Mount our workflow JSONs
       - ./n8n/workflows:/home/node/.n8n/workflows
-    depends_on:
-      - postgres
     networks:
       - gtm-network
     restart: unless-stopped
 
   # ==========================================
   # Service 3 — PostgreSQL Database
-  # Local alternative to Supabase
-  # Same PostgreSQL engine underneath
   # ==========================================
   postgres:
     image: postgres:16-alpine
@@ -77,26 +64,16 @@ services:
       - POSTGRES_PASSWORD=gtmpassword
       - POSTGRES_DB=gtmops
     volumes:
-      # Persist database data between restarts
       - postgres_data:/var/lib/postgresql/data
-      # Run schema on first startup
       - ./supabase/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     networks:
       - gtm-network
     restart: unless-stopped
 
-# ==========================================
-# Volumes — Persistent Storage
-# Data survives container restarts
-# ==========================================
 volumes:
   postgres_data:
   n8n_data:
 
-# ==========================================
-# Networks — Internal Communication
-# Services talk to each other securely
-# ==========================================
 networks:
   gtm-network:
     driver: bridge
