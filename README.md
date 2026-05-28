@@ -302,7 +302,7 @@ gtm-ops-agent/
 
 ## Key Design Decisions
 
-**Dual LLM routing** — Groq for speed, Ollama for GDPR compliance. Sensitive data never leaves the machine when using Ollama.
+**Dual LLM routing** — Groq is used in production for speed. Ollama support is built in for local GDPR-compliant deployments where sensitive data should not leave the machine. Configure via DEFAULT_LLM_PROVIDER in .env.
 
 **Human-in-the-loop everywhere** — Zero autonomous outbound. Every email, Slack message, and provisioning action requires human approval.
 
