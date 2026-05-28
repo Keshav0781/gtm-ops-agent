@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTM Ops Agent — AI Operations Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --card: #111827;
+    --card-hover: #1a2235;
+    --accent: #009775;
+    --accent-light: #00b88f;
+    --accent-dim: rgba(0,151,117,0.12);
+    --text: #f9fafb;
+    --text-muted: #9ca3af;
+    --border: #1f2937;
+    --success: #009775;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 260px;
+    min-height: 100vh;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+
+  .sidebar-header {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-top: 12px;
+    font-weight: 500;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .nav {
+    flex: 1;
+    padding: 16px 12px;
+    overflow-y: auto;
+  }
+
+  .nav-section {
+    margin-bottom: 24px;
+  }
+
+  .nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 0 12px;
+    margin-bottom: 8px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border: 1px solid transparent;
+  }
+
+  .nav-item:hover {
+    background: var(--card-hover);
+    color: var(--text);
+  }
+
+  .nav-item.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: rgba(0,151,117,0.2);
+  }
+
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .api-url {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-top: 4px;
+    display: block;
+    word-break: break-all;
+  }
+
+  /* Main content */
+  .main {
+    margin-left: 260px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10,15,30,0.8);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .page-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .page-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  .content {
+    padding: 32px;
+    flex: 1;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Form elements */
+  .form-group { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  input, textarea, select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  textarea { resize: vertical; min-height: 100px; }
+
+  .btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+
+  .btn-primary:hover { background: var(--accent-light); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover { background: var(--card-hover); }
+
+  /* Results */
+  .result-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 20px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-high { background: rgba(239,68,68,0.15); color: #ef4444; }
+  .badge-medium { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .badge-low { background: rgba(0,151,117,0.15); color: var(--accent); }
+  .badge-success { background: var(--accent-dim); color: var(--accent); }
+  .badge-info { background: rgba(99,102,241,0.15); color: #6366f1; }
+  .badge-error { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+
+  .result-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .result-value { font-size: 14px; font-weight: 500; }
+
+  .result-text {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-top: 12px;
+  }
+
+  /* Loading */
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,151,117,0.2);
+    border-radius: 8px;
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--accent);
+  }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--accent-dim);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error */
+  .error-msg {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 8px;
+    padding: 14px 18px;
+    color: #ef4444;
+    font-size: 13px;
+    margin-top: 16px;
+  }
+
+  /* Metrics row */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .metric-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+  }
+
+  .metric-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .metric-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Page sections */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Tag list */
+  .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .tag {
+    padding: 4px 12px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* Action items */
+  .action-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .action-num {
+    width: 24px; height: 24px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Grid 2 cols */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .main { margin-left: 0; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">GTM Ops Agent</div>
+        <div class="logo-sub">AI Operations Platform</div>
+      </div>
+    </div>
+    <div class="status-badge">
+      <div class="status-dot"></div>
+      All Systems Operational
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section">
+      <div class="nav-label">Overview</div>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Sales & Marketing</div>
+      <div class="nav-item" onclick="showPage('leads')">
+        <span class="nav-icon">🎯</span> Lead Intelligence
+      </div>
+      <div class="nav-item" onclick="showPage('emails')">
+        <span class="nav-icon">📧</span> Email Triage
+      </div>
+      <div class="nav-item" onclick="showPage('competitors')">
+        <span class="nav-icon">🔍</span> Competitor Intel
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Operations</div>
+      <div class="nav-item" onclick="showPage('meetings')">
+        <span class="nav-icon">🗓</span> Meeting Intelligence
+      </div>
+      <div class="nav-item" onclick="showPage('crm')">
+        <span class="nav-icon">💼</span> CRM Hygiene
+      </div>
+      <div class="nav-item" onclick="showPage('hr')">
+        <span class="nav-icon">👤</span> HR Onboarding
+      </div>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div>Live API</div>
+    <span class="api-url" id="apiUrlDisplay">Loading...</span>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="page-sub" id="pageSub">Overview of all GTM operations agents</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <input type="text" id="apiUrlInput" placeholder="API URL" style="width:360px;padding:8px 14px;font-size:12px;font-family:'DM Mono',monospace;" value="https://gtm-ops-agent-324111066236.europe-west3.run.app">
+      <button class="btn btn-secondary" onclick="setApiUrl()" style="padding:8px 16px;font-size:12px;">Set URL</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Dashboard page -->
+    <div class="page active" id="page-dashboard">
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="metric-value">6</div>
+          <div class="metric-label">AI Agents</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">5</div>
+          <div class="metric-label">n8n Workflows</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">50+</div>
+          <div class="metric-label">Tests Passing</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">2</div>
+          <div class="metric-label">LLM Providers</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">GCP</div>
+          <div class="metric-label">Deployed On</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" id="healthStatus">—</div>
+          <div class="metric-label">API Health</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">🤖 Agents</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div onclick="showPage('leads')" style="cursor:pointer;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-weight:600;font-size:14px;margin-bottom:4px;">🎯 Lead Intelligence</div>
+              <div style="font-size:12px;color:var(--text-muted);">Research → Score → Draft Email → Slack Approval</div>
+            </div>
+            <div onclick="showPage('emails')" style="cursor:pointer;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-weight:600;font-size:14px;margin-bottom:4px;">📧 Email Triage</div>
+              <div style="font-size:12px;color:var(--text-muted);">Classify → Draft Reply → Route to Team</div>
+            </div>
+            <div onclick="showPage('meetings')" style="cursor:pointer;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-weight:600;font-size:14px;margin-bottom:4px;">🗓 Meeting Intelligence</div>
+              <div style="font-size:12px;color:var(--text-muted);">Extract Action Items → Summary → Slack + Notion</div>
+            </div>
+            <div onclick="showPage('crm')" style="cursor:pointer;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-weight:600;font-size:14px;margin-bottom:4px;">💼 CRM Hygiene</div>
+              <div style="font-size:12px;color:var(--text-muted);">Scan Deals → Flag Stale → Alert Owners</div>
+            </div>
+            <div onclick="showPage('competitors')" style="cursor:pointer;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-weight:600;font-size:14px;margin-bottom:4px;">🔍 Competitor Intelligence</div>
+              <div style="font-size:12px;color:var(--text-muted);">Monitor Changes → Weekly Report → Slack</div>
+            </div>
+            <div onclick="showPage('hr')" style="cursor:pointer;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-weight:600;font-size:14px;margin-bottom:4px;">👤 HR Onboarding</div>
+              <div style="font-size:12px;color:var(--text-muted);">Natural Language → Plan → Approve → Provision</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">⚙️ Tech Stack</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);font-size:13px;">
+              <span style="color:var(--text-muted);">Agent Framework</span>
+              <span style="font-weight:600;">LangGraph</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);font-size:13px;">
+              <span style="color:var(--text-muted);">Primary LLM</span>
+              <span style="font-weight:600;">Groq — Llama 3.3 70B</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);font-size:13px;">
+              <span style="color:var(--text-muted);">Secondary LLM</span>
+              <span style="font-weight:600;">Ollama (GDPR local)</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);font-size:13px;">
+              <span style="color:var(--text-muted);">Orchestration</span>
+              <span style="font-weight:600;">n8n</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);font-size:13px;">
+              <span style="color:var(--text-muted);">API</span>
+              <span style="font-weight:600;">FastAPI</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);font-size:13px;">
+              <span style="color:var(--text-muted);">Database</span>
+              <span style="font-weight:600;">PostgreSQL</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);font-size:13px;">
+              <span style="color:var(--text-muted);">Monitoring</span>
+              <span style="font-weight:600;">LangSmith</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);font-size:13px;">
+              <span style="color:var(--text-muted);">Deployment</span>
+              <span style="font-weight:600;">GCP Cloud Run</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lead Intelligence -->
+    <div class="page" id="page-leads">
+      <div class="card">
+        <div class="card-title">🎯 Analyze New Lead</div>
+        <div class="grid-2">
+          <div>
+            <div class="form-group">
+              <label>Company Name *</label>
+              <input type="text" id="lead-company" placeholder="e.g. BMW Munich">
+            </div>
+            <div class="form-group">
+              <label>Contact Name</label>
+              <input type="text" id="lead-name" placeholder="e.g. Thomas Müller">
+            </div>
+            <div class="form-group">
+              <label>Contact Email</label>
+              <input type="email" id="lead-email" placeholder="e.g. thomas@bmw.de">
+            </div>
+          </div>
+          <div>
+            <div class="form-group">
+              <label>Message</label>
+              <textarea id="lead-message" placeholder="What did they say? What are they interested in?" style="min-height:130px;"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Source</label>
+              <select id="lead-source">
+                <option value="website">Website</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="referral">Referral</option>
+                <option value="email">Email</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="analyzeLead()">⚡ Analyze Lead</button>
+      </div>
+      <div id="lead-result"></div>
+    </div>
+
+    <!-- Email Triage -->
+    <div class="page" id="page-emails">
+      <div class="card">
+        <div class="card-title">📧 Triage Incoming Email</div>
+        <div class="grid-2">
+          <div>
+            <div class="form-group">
+              <label>Sender Email *</label>
+              <input type="email" id="email-sender" placeholder="e.g. thomas@bmw.de">
+            </div>
+            <div class="form-group">
+              <label>Sender Name</label>
+              <input type="text" id="email-sender-name" placeholder="e.g. Thomas Müller">
+            </div>
+            <div class="form-group">
+              <label>Subject</label>
+              <input type="text" id="email-subject" placeholder="e.g. Partnership Inquiry">
+            </div>
+          </div>
+          <div>
+            <div class="form-group">
+              <label>Email Body *</label>
+              <textarea id="email-body" placeholder="Paste the email content here..." style="min-height:160px;"></textarea>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="triageEmail()">⚡ Triage Email</button>
+      </div>
+      <div id="email-result"></div>
+    </div>
+
+    <!-- Meeting Intelligence -->
+    <div class="page" id="page-meetings">
+      <div class="card">
+        <div class="card-title">🗓 Analyze Meeting</div>
+        <div class="grid-2">
+          <div>
+            <div class="form-group">
+              <label>Meeting Title</label>
+              <input type="text" id="meeting-title" placeholder="e.g. Q2 Planning Meeting">
+            </div>
+            <div class="form-group">
+              <label>Meeting Date</label>
+              <input type="text" id="meeting-date" placeholder="e.g. 2026-05-28">
+            </div>
+            <div class="form-group">
+              <label>Attendees</label>
+              <input type="text" id="meeting-attendees" placeholder="e.g. John, Sarah, Thomas">
+            </div>
+            <div class="form-group">
+              <label>Duration (minutes)</label>
+              <input type="number" id="meeting-duration" placeholder="e.g. 45">
+            </div>
+          </div>
+          <div>
+            <div class="form-group">
+              <label>Meeting Transcript *</label>
+              <textarea id="meeting-transcript" placeholder="Paste meeting notes or transcript here..." style="min-height:200px;"></textarea>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="analyzeMeeting()">⚡ Analyze Meeting</button>
+      </div>
+      <div id="meeting-result"></div>
+    </div>
+
+    <!-- CRM Hygiene -->
+    <div class="page" id="page-crm">
+      <div class="card">
+        <div class="card-title">💼 CRM Hygiene Scan</div>
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Scan deals for stale, incomplete, or stuck entries. The agent will flag issues and recommend actions.</p>
+        <div class="form-group">
+          <label>Scan Date</label>
+          <input type="text" id="crm-date" placeholder="e.g. 2026-05-28">
+        </div>
+        <p style="color:var(--text-muted);font-size:12px;margin-bottom:16px;">Using sample deal data for demo. In production this connects to HubSpot API.</p>
+        <button class="btn btn-primary" onclick="scanCRM()">⚡ Run CRM Scan</button>
+      </div>
+      <div id="crm-result"></div>
+    </div>
+
+    <!-- Competitor Intelligence -->
+    <div class="page" id="page-competitors">
+      <div class="card">
+        <div class="card-title">🔍 Competitor Intelligence Scan</div>
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Monitor competitor websites for changes in pricing, features, and messaging.</p>
+        <div class="form-group">
+          <label>Report Date</label>
+          <input type="text" id="comp-date" placeholder="e.g. 2026-05-28">
+        </div>
+        <p style="color:var(--text-muted);font-size:12px;margin-bottom:16px;">Monitoring: Example Corp, HTTPBin. In production you can configure any competitor URL.</p>
+        <button class="btn btn-primary" onclick="scanCompetitors()">⚡ Run Competitor Scan</button>
+      </div>
+      <div id="comp-result"></div>
+    </div>
+
+    <!-- HR Onboarding -->
+    <div class="page" id="page-hr">
+      <div class="card">
+        <div class="card-title">👤 HR Onboarding Request</div>
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Type a natural language onboarding request. The agent will plan the provisioning and send an approval card to Slack.</p>
+        <div class="form-group">
+          <label>Onboarding Request *</label>
+          <textarea id="hr-request" placeholder="e.g. Onboard Sarah Chen as Product Designer starting Monday June 2nd, email: sarah@datasync.de, manager: Thomas Müller, Berlin office" style="min-height:100px;"></textarea>
+        </div>
+        <div style="background:var(--accent-dim);border:1px solid rgba(0,151,117,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--accent);">
+          💡 After submission, go to Slack #hr-onboarding and type <strong>APPROVE [request_id]</strong> to provision systems.
+        </div>
+        <button class="btn btn-primary" onclick="submitHROnboarding()">⚡ Submit Onboarding Request</button>
+      </div>
+      <div id="hr-result"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+let API_URL = 'https://gtm-ops-agent-324111066236.europe-west3.run.app';
+
+function setApiUrl() {
+  API_URL = document.getElementById('apiUrlInput').value.trim().replace(/\/$/, '');
+  document.getElementById('apiUrlDisplay').textContent = API_URL;
+  checkHealth();
+}
+
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+
+  // Clear all result divs when navigating
+  ['lead-result','email-result','meeting-result','crm-result','comp-result','hr-result'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+
+  const titles = {
+    dashboard: ['Dashboard', 'Overview of all GTM operations agents'],
+    leads: ['Lead Intelligence', 'Research and score incoming leads automatically'],
+    emails: ['Email Triage', 'Classify and route incoming emails'],
+    meetings: ['Meeting Intelligence', 'Extract action items and generate summaries'],
+    crm: ['CRM Hygiene', 'Scan and flag stale or incomplete deals'],
+    competitors: ['Competitor Intelligence', 'Monitor competitor activity weekly'],
+    hr: ['HR Onboarding', 'Natural language employee provisioning']
+  };
+
+  document.getElementById('pageTitle').textContent = titles[page][0];
+  document.getElementById('pageSub').textContent = titles[page][1];
+
+  event.currentTarget && event.currentTarget.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+page+"'")) {
+      n.classList.add('active');
+    }
+  });
+}
+
+async function checkHealth() {
+  try {
+    const res = await fetch(API_URL + '/health');
+    const data = await res.json();
+    document.getElementById('healthStatus').textContent = data.status === 'healthy' ? '✓' : '✗';
+    document.getElementById('healthStatus').style.color = data.status === 'healthy' ? 'var(--accent)' : 'var(--error)';
+  } catch(e) {
+    document.getElementById('healthStatus').textContent = '✗';
+    document.getElementById('healthStatus').style.color = 'var(--error)';
+  }
+}
+
+function showLoading(id) {
+  document.getElementById(id).innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      Agent is processing your request...
+    </div>`;
+}
+
+function showError(id, msg) {
+  document.getElementById(id).innerHTML = `<div class="error-msg">❌ ${msg}</div>`;
+}
+
+function scoreColor(score) {
+  if (!score) return 'badge-info';
+  const s = score.toUpperCase();
+  if (s === 'HIGH') return 'badge-high';
+  if (s === 'MEDIUM') return 'badge-medium';
+  return 'badge-low';
+}
+
+async function analyzeLead() {
+  const company = document.getElementById('lead-company').value.trim();
+  if (!company) return alert('Company name is required');
+  showLoading('lead-result');
+  try {
+    const res = await fetch(API_URL + '/leads/analyze', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        company_name: company,
+        contact_name: document.getElementById('lead-name').value,
+        contact_email: document.getElementById('lead-email').value,
+        message: document.getElementById('lead-message').value,
+        source: document.getElementById('lead-source').value
+      })
+    });
+    const d = await res.json();
+    document.getElementById('lead-result').innerHTML = `
+      <div class="result-card">
+        <div class="result-header">
+          <span style="font-weight:700;font-size:16px;">📊 ${d.company_name}</span>
+          <span class="badge ${scoreColor(d.score)}">${d.score || 'N/A'}</span>
+        </div>
+        <div class="result-grid">
+          <div class="result-item"><div class="result-label">Industry</div><div class="result-value">${d.industry || '—'}</div></div>
+          <div class="result-item"><div class="result-label">Company Size</div><div class="result-value">${d.company_size || '—'}</div></div>
+          <div class="result-item"><div class="result-label">Qualified</div><div class="result-value">${d.is_qualified ? '✅ Yes' : '❌ No'}</div></div>
+          <div class="result-item"><div class="result-label">Request ID</div><div class="result-value" style="font-family:'DM Mono',monospace;font-size:12px;">${d.request_id}</div></div>
+        </div>
+        <hr class="divider">
+        <div class="result-label">Score Reasoning</div>
+        <div class="result-text">${d.score_reasoning || '—'}</div>
+        <div style="margin-top:16px;">
+          <div class="result-label">Drafted Email Subject</div>
+          <div class="result-text" style="margin-top:8px;"><strong>${d.draft_email_subject || '—'}</strong></div>
+          <div class="result-text" style="margin-top:8px;">${d.draft_email_body || '—'}</div>
+        </div>
+      </div>`;
+  } catch(e) { showError('lead-result', 'Failed to connect to API. Check the URL above.'); }
+}
+
+async function triageEmail() {
+  const sender = document.getElementById('email-sender').value.trim();
+  const body = document.getElementById('email-body').value.trim();
+  if (!sender || !body) return alert('Sender email and body are required');
+  showLoading('email-result');
+  try {
+    const res = await fetch(API_URL + '/emails/triage', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        sender_email: sender,
+        sender_name: document.getElementById('email-sender-name').value,
+        subject: document.getElementById('email-subject').value,
+        body: body
+      })
+    });
+    const d = await res.json();
+    const classColors = {sales:'badge-high', support:'badge-medium', partnership:'badge-info', spam:'badge-error', finance:'badge-medium'};
+    document.getElementById('email-result').innerHTML = `
+      <div class="result-card">
+        <div class="result-header">
+          <span style="font-weight:700;font-size:16px;">📧 ${d.sender_email}</span>
+          <span class="badge ${classColors[(d.classification||'').toLowerCase()] || 'badge-info'}">${d.classification || 'N/A'}</span>
+        </div>
+        <div class="result-grid">
+          <div class="result-item"><div class="result-label">Priority</div><div class="result-value">${d.priority || '—'}</div></div>
+          <div class="result-item"><div class="result-label">Sentiment</div><div class="result-value">${d.sentiment || '—'}</div></div>
+          <div class="result-item"><div class="result-label">Sender Company</div><div class="result-value">${d.sender_company || '—'}</div></div>
+          <div class="result-item"><div class="result-label">Route To</div><div class="result-value">${d.route_to || '—'}</div></div>
+        </div>
+        <hr class="divider">
+        <div class="result-label">Core Request</div>
+        <div class="result-text">${d.core_request || '—'}</div>
+        <div style="margin-top:16px;">
+          <div class="result-label">Draft Reply</div>
+          <div class="result-text" style="margin-top:8px;"><strong>${d.draft_reply_subject || '—'}</strong></div>
+          <div class="result-text" style="margin-top:8px;">${d.draft_reply_body || '—'}</div>
+        </div>
+      </div>`;
+  } catch(e) { showError('email-result', 'Failed to connect to API. Check the URL above.'); }
+}
+
+async function analyzeMeeting() {
+  const transcript = document.getElementById('meeting-transcript').value.trim();
+  if (!transcript) return alert('Meeting transcript is required');
+  showLoading('meeting-result');
+  try {
+    const res = await fetch(API_URL + '/meetings/analyze', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        meeting_title: document.getElementById('meeting-title').value || 'Team Meeting',
+        meeting_date: document.getElementById('meeting-date').value,
+        attendees: document.getElementById('meeting-attendees').value,
+        transcript: transcript,
+        duration_minutes: parseInt(document.getElementById('meeting-duration').value) || null
+      })
+    });
+    const d = await res.json();
+    document.getElementById('meeting-result').innerHTML = `
+      <div class="result-card">
+        <div class="result-header">
+          <span style="font-weight:700;font-size:16px;">🗓 ${d.meeting_title || 'Meeting'}</span>
+          <span class="badge badge-info">${d.meeting_type || 'Meeting'}</span>
+        </div>
+        <div class="result-grid">
+          <div class="result-item"><div class="result-label">Action Items</div><div class="result-value">${d.action_items_count || 0}</div></div>
+          <div class="result-item"><div class="result-label">Participants</div><div class="result-value">${d.participants_identified || '—'}</div></div>
+        </div>
+        <hr class="divider">
+        <div class="result-label">Summary</div>
+        <div class="result-text">${d.summary || '—'}</div>
+        <div style="margin-top:16px;">
+          <div class="result-label">Key Outcomes</div>
+          <div class="result-text">${d.key_outcomes || '—'}</div>
+        </div>
+        ${d.decisions_made ? `<div style="margin-top:16px;"><div class="result-label">Decisions Made</div><div class="result-text">${d.decisions_made}</div></div>` : ''}
+        ${d.blockers_identified ? `<div style="margin-top:16px;"><div class="result-label">Blockers</div><div class="result-text">${d.blockers_identified}</div></div>` : ''}
+      </div>`;
+  } catch(e) { showError('meeting-result', 'Failed to connect to API. Check the URL above.'); }
+}
+
+async function scanCRM() {
+  showLoading('crm-result');
+  const today = document.getElementById('crm-date').value || new Date().toISOString().split('T')[0];
+  try {
+    const res = await fetch(API_URL + '/crm/analyze', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        deals: [
+          {deal_id:'D001',deal_name:'BMW Analytics Deal',company:'BMW',owner:'Thomas',stage:'Proposal',deal_value:50000,last_contact_date:'2026-04-01',stage_changed_date:'2026-04-01'},
+          {deal_id:'D002',deal_name:'Siemens Integration',company:'Siemens',owner:'Sarah',stage:'Negotiation',deal_value:120000,last_contact_date:'2026-03-15',stage_changed_date:'2026-03-10'},
+          {deal_id:'D003',deal_name:'Bosch Platform Deal',company:'Bosch',owner:'Klaus',stage:'Discovery',deal_value:75000,last_contact_date:'2026-05-01',stage_changed_date:'2026-04-20'}
+        ],
+        scan_date: today
+      })
+    });
+    const d = await res.json();
+    document.getElementById('crm-result').innerHTML = `
+      <div class="result-card">
+        <div class="result-header">
+          <span style="font-weight:700;font-size:16px;">💼 CRM Scan Complete</span>
+          <span class="badge badge-info">${today}</span>
+        </div>
+        <div class="result-grid">
+          <div class="result-item"><div class="result-label">Total Deals</div><div class="result-value">${d.total_deals_count || 0}</div></div>
+          <div class="result-item"><div class="result-label">Problematic</div><div class="result-value" style="color:var(--error)">${d.problematic_deals_count || 0}</div></div>
+          <div class="result-item"><div class="result-label">High Priority</div><div class="result-value" style="color:var(--error)">${d.high_priority_count || 0}</div></div>
+          <div class="result-item"><div class="result-label">Total Alerts</div><div class="result-value">${d.total_alerts_count || 0}</div></div>
+        </div>
+        <hr class="divider">
+        <div class="result-label">Scan Summary</div>
+        <div class="result-text">${d.scan_summary || '—'}</div>
+      </div>`;
+  } catch(e) { showError('crm-result', 'Failed to connect to API. Check the URL above.'); }
+}
+
+async function scanCompetitors() {
+  showLoading('comp-result');
+  const today = document.getElementById('comp-date').value || new Date().toISOString().split('T')[0];
+  try {
+    const res = await fetch(API_URL + '/competitors/analyze', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        competitors: [
+          {name:'Example Corp',url:'https://example.com'},
+          {name:'HTTPBin',url:'https://httpbin.org'}
+        ],
+        report_date: today
+      })
+    });
+    const d = await res.json();
+    document.getElementById('comp-result').innerHTML = `
+      <div class="result-card">
+        <div class="result-header">
+          <span style="font-weight:700;font-size:16px;">🔍 Competitor Scan Complete</span>
+          <span class="badge badge-info">${today}</span>
+        </div>
+        <div class="result-grid">
+          <div class="result-item"><div class="result-label">Scraped</div><div class="result-value">${d.successful_scrapes || 0}</div></div>
+          <div class="result-item"><div class="result-label">Failed</div><div class="result-value">${d.failed_scrapes || 0}</div></div>
+          <div class="result-item"><div class="result-label">Changes Found</div><div class="result-value">${d.total_changes_found || 0}</div></div>
+        </div>
+        <hr class="divider">
+        <div class="result-label">Report Summary</div>
+        <div class="result-text">${d.report_summary || d.slack_report || '—'}</div>
+      </div>`;
+  } catch(e) { showError('comp-result', 'Failed to connect to API. Check the URL above.'); }
+}
+
+async function submitHROnboarding() {
+  const request = document.getElementById('hr-request').value.trim();
+  if (!request) return alert('Please enter an onboarding request');
+  showLoading('hr-result');
+  try {
+    const res = await fetch(API_URL + '/hr/onboard', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({onboarding_request: request})
+    });
+    const d = await res.json();
+    document.getElementById('hr-result').innerHTML = `
+      <div class="result-card">
+        <div class="result-header">
+          <span style="font-weight:700;font-size:16px;">👤 ${d.employee_name || 'Employee'}</span>
+          <span class="badge ${d.approval_sent ? 'badge-success' : 'badge-medium'}">${d.approval_sent ? 'Approval Sent' : 'Pending'}</span>
+        </div>
+        <div class="result-grid">
+          <div class="result-item"><div class="result-label">Role</div><div class="result-value">${d.role || '—'}</div></div>
+          <div class="result-item"><div class="result-label">Department</div><div class="result-value">${d.department || '—'}</div></div>
+          <div class="result-item"><div class="result-label">Start Date</div><div class="result-value">${d.start_date || '—'}</div></div>
+          <div class="result-item"><div class="result-label">Request ID</div><div class="result-value" style="font-family:'DM Mono',monospace;font-size:12px;">${d.request_id}</div></div>
+        </div>
+        <hr class="divider">
+        <div class="result-label">Systems to Provision</div>
+        <div class="tag-list">${(d.systems_to_provision || []).map(s => `<span class="tag">${s}</span>`).join('')}</div>
+        <div style="margin-top:16px;">
+          <div class="result-label">Slack Channels</div>
+          <div class="tag-list">${(d.slack_channels || []).map(c => `<span class="tag">${c}</span>`).join('')}</div>
+        </div>
+        <div style="margin-top:16px;">
+          <div class="result-label">Drive Folder</div>
+          <div class="result-text">${d.drive_folder_path || '—'}</div>
+        </div>
+        ${d.requires_github ? '<div style="margin-top:12px;padding:10px 14px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:8px;font-size:12px;color:#f59e0b;">⚠ GitHub: invitation will be sent, pending acceptance</div>' : ''}
+        ${d.requires_figma ? '<div style="margin-top:8px;padding:10px 14px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:8px;font-size:12px;color:#f59e0b;">⚠ Figma: manual admin invite required</div>' : ''}
+        <div style="margin-top:16px;padding:14px;background:var(--accent-dim);border:1px solid rgba(0,151,117,0.2);border-radius:8px;font-size:13px;color:var(--accent);">
+          ✅ Approval card sent to Slack #hr-onboarding. Type <strong>APPROVE ${d.request_id}</strong> to proceed with provisioning.
+        </div>
+      </div>`;
+  } catch(e) { showError('hr-result', 'Failed to connect to API. Check the URL above.'); }
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('apiUrlDisplay').textContent = API_URL;
+  checkHealth();
+  // Auto-fill today's date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('crm-date').value = today;
+  document.getElementById('comp-date').value = today;
+  document.getElementById('meeting-date').value = today;
+});
+</script>
+</body>
+</html>
