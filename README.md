@@ -1,52 +1,34 @@
 # GTM Ops Agent
 
-Production-grade GTM (Go-To-Market) operations automation using LangGraph, n8n, and MCP integration. A multi-agent system that automates the complete GTM operations loop for a B2B SaaS startup.
-
----
-
-## What It Does
-
-Automates 5 daily manual operations that waste 3-4 hours every day:
-
-| Agent | What it automates |
-|---|---|
-| Lead Intelligence | New lead → research → score → draft email → Slack approval |
-| Email Triage | Email arrives → classify → draft reply → route to team |
-| Meeting Intelligence | Meeting ends → extract action items → summary → Slack + Notion |
-| CRM Hygiene | Daily 9am scan → flag stale deals → alert owners via Slack |
-| Competitor Intelligence | Weekly Monday scan → detect changes → report to Slack |
-| HR Onboarding | Natural language request → plan → manager approval → provision systems |
+Production-grade GTM (Go-To-Market) operations automation using LangGraph, n8n, and FastAPI. A multi-agent system that automates the complete GTM operations loop for a B2B SaaS startup — from lead scoring to HR onboarding.
 
 ---
 
 ## Live Demo
 
-API is deployed and running on Google Cloud Run (Frankfurt, Germany):
+**Dashboard:** https://keshav0781.github.io/gtm-ops-agent/
 
-```
-https://gtm-ops-agent-324111066236.europe-west3.run.app
-```
+**Live API:** https://gtm-ops-agent-324111066236.europe-west3.run.app
 
-API Documentation: https://gtm-ops-agent-324111066236.europe-west3.run.app/docs
-
-### Test the live API
-
-```bash
-# Health check
-curl https://gtm-ops-agent-324111066236.europe-west3.run.app/health
-
-# Test Lead Intelligence
-curl -X POST https://gtm-ops-agent-324111066236.europe-west3.run.app/leads/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"company_name": "BMW Munich", "message": "Interested in analytics platform"}'
-
-# Test Email Triage
-curl -X POST https://gtm-ops-agent-324111066236.europe-west3.run.app/emails/triage \
-  -H "Content-Type: application/json" \
-  -d '{"sender_email": "thomas@bmw.de", "body": "We need analytics support"}'
-```
+**API Docs:** https://gtm-ops-agent-324111066236.europe-west3.run.app/docs
 
 ---
+
+## What It Does
+
+Automates 6 daily manual operations that waste 3-4 hours every day:
+
+| Agent | What it automates |
+|---|---|
+| Lead Intelligence | New lead → research → score → draft email → Slack approval |
+| Email Triage | Email arrives → classify → draft reply → route to team |
+| Meeting Intelligence | Meeting ends → extract action items → summary → Slack |
+| CRM Hygiene | Scan deals → flag stale → alert owners via Slack |
+| Competitor Intelligence | Scan competitor websites → detect changes → report to Slack |
+| HR Onboarding | Natural language request → plan → manager approval in Slack → provision systems |
+
+---
+
 ## Tech Stack
 
 | Component | Technology |
@@ -59,34 +41,173 @@ curl -X POST https://gtm-ops-agent-324111066236.europe-west3.run.app/emails/tria
 | Database | PostgreSQL |
 | Monitoring | LangSmith |
 | Containerisation | Docker |
+| Deployment | GCP Cloud Run + Cloud SQL |
 
 ---
 
 ## Architecture
 
+The system has two distinct flows:
+
+**Flow 1 — All Agents (Lead, Email, Meeting, CRM, Competitor)**
+
 ```
-Contact Form / Gmail / Calendar / Slack
-            ↓
-        n8n Workflows
-            ↓
-      FastAPI Endpoints
-            ↓
-    LangGraph Agents (6)
-            ↓
-  Groq LLM / Ollama (local)
-            ↓
-    Slack Notifications
+User
+ │
+ │ fills form and clicks Submit
+ ▼
+Dashboard (GitHub Pages)
+ │
+ │ HTTP POST
+ ▼
+FastAPI (GCP Cloud Run)
+ │
+ │ invokes agent
+ ▼
+LangGraph Agent
+ │
+ ├──► Groq LLM (reasoning, scoring, drafting)
+ │
+ └──► Slack (posts result/notification)
+```
+
+**Flow 2 — HR Onboarding (two-step with human approval)**
+
+Step 1 — Plan and request approval:
+```
+User
+ │
+ │ types natural language request
+ ▼
+Dashboard (GitHub Pages)
+ │
+ │ HTTP POST /hr/onboard
+ ▼
+FastAPI (GCP Cloud Run)
+ │
+ │ invokes agent
+ ▼
+LangGraph Agent (nodes 1-3)
+ │
+ ├──► Groq LLM (parse request, plan provisioning)
+ │
+ ├──► PostgreSQL (save full state by request_id)
+ │
+ └──► Slack #hr-onboarding (posts approval card)
+```
+
+Step 2 — Manager approves and systems are provisioned:
+```
+Manager
+ │
+ │ types: APPROVE [request_id] in Slack
+ ▼
+Slack
+ │
+ │ sends event to webhook
+ ▼
+n8n
+ │ Slack Trigger detects new message
+ │ IF node checks: contains APPROVE + not a bot
+ │
+ │ HTTP POST /hr/provision
+ ▼
+FastAPI (GCP Cloud Run)
+ │
+ │ invokes provisioning agent
+ ▼
+LangGraph Agent (node 4)
+ │
+ ├──► PostgreSQL (retrieve state by request_id)
+ │
+ └──► Slack #hr-onboarding (posts confirmation)
 ```
 
 ---
 
-## Quick Start
+## Try the Live Dashboard
+
+Open https://keshav0781.github.io/gtm-ops-agent/ in your browser. The dashboard connects to the live GCP API automatically.
+
+### Lead Intelligence
+Fill in a company name and message. The agent researches the company, scores the lead HIGH/MEDIUM/LOW, and drafts a personalised outreach email.
+
+Example input:
+- Company: `Siemens Healthineers`
+- Contact: `Klaus Weber`
+- Email: `klaus@siemens-healthineers.com`
+- Message: `We need a B2B analytics platform for our medical imaging division across 15 countries`
+- Source: `Website`
+
+Expected output: HIGH score, Healthcare Technology industry, draft email personalised to their use case.
+
+### Email Triage
+Paste any email. The agent classifies it (sales, support, partnership, spam), assigns priority, extracts the core request, routes it to the right person, and drafts a reply.
+
+Example — Partnership email:
+- Sender: `anna@techstart.de`
+- Subject: `Partnership Opportunity`
+- Body: `We are TechStart GmbH, a 50-person AI startup. We'd love to explore a technical partnership integrating our document AI with your analytics platform.`
+
+Expected output: PARTNERSHIP classification, route to CEO, professional draft reply.
+
+Example — Spam email:
+- Sender: `noreply@casino-win.ru`
+- Subject: `You have won €50,000!!!`
+- Body: `Congratulations! Click here to claim your reward.`
+
+Expected output: SPAM classification (red badge), LOW priority, route to ignore, no draft reply.
+
+### Meeting Intelligence
+Paste a meeting transcript or notes. The agent extracts action items, identifies decisions made, flags blockers, and generates a summary.
+
+Example input:
+- Title: `Q3 Product Roadmap`
+- Attendees: `Keshav, Anna, Thomas`
+- Transcript: `Keshav said we need to launch the dashboard feature by end of June. Anna will design mockups by next Friday. Thomas handles backend API by June 15th. We decided to drop mobile app from Q3 scope. No blockers identified.`
+
+Expected output: PLANNING type, action items extracted with owners, decisions listed, blockers: NONE.
+
+### CRM Hygiene
+Click Run CRM Scan. The agent scans the deal pipeline using rule-based logic (no LLM) and flags:
+- Deals with no contact in 30+ days
+- Deals stuck in the same stage too long
+- Deals missing key information
+
+**Note:** Uses sample deal data for demo (BMW, Siemens, Bosch). In production this connects to HubSpot or Salesforce API. The agent is rule-based — no LLM involved — which makes it fast, deterministic, and auditable.
+
+### Competitor Intelligence
+Click Run Competitor Scan. The agent scrapes configured competitor websites and detects changes in pricing, features, and messaging compared to the previous scan.
+
+**Note:** First scan always shows "no changes" because there is no previous content to compare against. In production, the agent runs weekly and builds up a history of changes over time. Each subsequent scan compares against the last stored version and reports what changed.
+
+### HR Onboarding
+Type a natural language onboarding request. The agent:
+1. Parses employee details (name, role, email, start date, manager)
+2. Plans provisioning based on role (Engineer → GitHub, Designer → Figma, etc.)
+3. Posts an approval card to Slack #hr-onboarding
+4. Waits for manager to type `APPROVE [request_id]` in Slack
+5. n8n detects the approval and calls the provisioning endpoint
+6. Systems are provisioned, welcome email drafted, confirmation posted to Slack
+
+Example input:
+```
+Onboard Sarah Chen as Product Designer starting June 2nd,
+email: sarah.chen@datasync.de, manager: Thomas Müller
+```
+
+Expected output: Figma flagged (manual invite), GitHub not needed, channels #general #design #product, approval card sent to Slack.
+
+---
+
+## Quick Start (Local)
 
 ### Prerequisites
 - Python 3.13+
 - Docker
 - Groq API key (free at console.groq.com)
 - LangSmith API key (free at smith.langchain.com)
+- Slack Bot Token (create app at api.slack.com)
 
 ### Setup
 
@@ -133,7 +254,7 @@ uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 docker-compose up n8n
 ```
 
-API docs available at: http://localhost:8000/docs
+API docs (only when running locally): http://localhost:8000/docs
 
 ---
 
@@ -148,27 +269,6 @@ POST /crm/analyze             → CRM Hygiene Agent
 POST /competitors/analyze     → Competitor Intelligence Agent
 POST /hr/onboard              → HR Onboarding — plan and send approval
 POST /hr/provision            → HR Onboarding — execute after approval
-```
-
----
-
-## Testing
-
-```bash
-# Test Lead Intelligence
-curl -X POST http://localhost:8000/leads/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"company_name": "BMW Munich", "message": "Interested in analytics"}'
-
-# Test Email Triage
-curl -X POST http://localhost:8000/emails/triage \
-  -H "Content-Type: application/json" \
-  -d '{"sender_email": "thomas@bmw.de", "body": "We need analytics support"}'
-
-# Test HR Onboarding
-curl -X POST http://localhost:8000/hr/onboard \
-  -H "Content-Type: application/json" \
-  -d '{"onboarding_request": "Onboard Sarah Chen as Product Designer starting Monday"}'
 ```
 
 ---
@@ -189,6 +289,8 @@ gtm-ops-agent/
 │   ├── database.py
 │   ├── middleware/
 │   └── routers/
+├── dashboard/          ← Local development copy
+├── docs/               ← GitHub Pages deployment
 ├── n8n/workflows/
 ├── supabase/
 ├── tests/
@@ -200,13 +302,15 @@ gtm-ops-agent/
 
 ## Key Design Decisions
 
-**Dual LLM routing** — Groq for speed, Ollama for GDPR compliance. Sensitive data (HR, emails) uses local Ollama so data never leaves the machine.
+**Dual LLM routing** — Groq for speed, Ollama for GDPR compliance. Sensitive data never leaves the machine when using Ollama.
 
 **Human-in-the-loop everywhere** — Zero autonomous outbound. Every email, Slack message, and provisioning action requires human approval.
 
-**Rule-based where possible** — CRM Hygiene uses pure Python logic, no LLM. LLM only used where reasoning is genuinely needed.
+**Rule-based where possible** — CRM Hygiene uses pure Python logic, not LLM. Faster, cheaper, deterministic, and auditable.
 
-**n8n for orchestration** — Agents handle intelligence, n8n handles triggers, scheduling, and routing.
+**State persistence** — HR Onboarding saves full state to PostgreSQL after planning. Provisioning retrieves it by request_id after manager approves — no data passed through Slack messages.
+
+**n8n for orchestration** — Agents handle intelligence, n8n handles triggers, scheduling, approval routing, and human-in-the-loop workflows.
 
 ---
 
@@ -224,7 +328,7 @@ See `.env.example` for all required variables.
 
 | Variable | Description |
 |---|---|
-| GROQ_API_KEY | Groq API key for LLM |
+| GROQ_API_KEY | Groq API key for LLM calls |
 | LANGCHAIN_API_KEY | LangSmith monitoring |
 | SLACK_BOT_TOKEN | Slack bot token for notifications |
 | DATABASE_URL | PostgreSQL connection string |
@@ -234,6 +338,6 @@ See `.env.example` for all required variables.
 
 ## Author
 
-Keshav Jha — AI Engineer
+Keshav Jha — AI Engineer, Erlangen Germany
 GitHub: https://github.com/Keshav0781
 Email: itskeshavjha1996@gmail.com
