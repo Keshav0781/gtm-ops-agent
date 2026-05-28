@@ -19,6 +19,34 @@ Automates 5 daily manual operations that waste 3-4 hours every day:
 
 ---
 
+## Live Demo
+
+API is deployed and running on Google Cloud Run (Frankfurt, Germany):
+
+```
+https://gtm-ops-agent-324111066236.europe-west3.run.app
+```
+
+API Documentation: https://gtm-ops-agent-324111066236.europe-west3.run.app/docs
+
+### Test the live API
+
+```bash
+# Health check
+curl https://gtm-ops-agent-324111066236.europe-west3.run.app/health
+
+# Test Lead Intelligence
+curl -X POST https://gtm-ops-agent-324111066236.europe-west3.run.app/leads/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"company_name": "BMW Munich", "message": "Interested in analytics platform"}'
+
+# Test Email Triage
+curl -X POST https://gtm-ops-agent-324111066236.europe-west3.run.app/emails/triage \
+  -H "Content-Type: application/json" \
+  -d '{"sender_email": "thomas@bmw.de", "body": "We need analytics support"}'
+```
+
+---
 ## Tech Stack
 
 | Component | Technology |
