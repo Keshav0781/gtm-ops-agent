@@ -342,7 +342,7 @@ See `.env.example` for all required variables.
 
 GTM Ops Agent uses a functional evaluation pipeline to validate agent output quality against golden datasets. Each agent is tested by calling the live GCP API and comparing structured outputs against expected values.
 
-Why functional testing and not RAGAS: GTM Ops Agent is an agentic reasoning system, not a RAG pipeline. RAGAS metrics require retrieved context chunks which agentic systems do not expose. Functional testing is the correct evaluation approach for agentic systems.
+Why functional testing: GTM Ops Agent agents return structured JSON outputs — score, classification, routing, alerts. For structured output validation, field-level behavioral testing is more precise and reliable than LLM-judged relevancy metrics such as RAGAS answer_relevancy. RAGAS multi-turn agent metrics require conversational message history which our single-turn API agents do not produce. Functional testing is the correct and standard approach for validating single-turn agentic systems with structured outputs.
 
 Run evaluation against the live GCP API:
 
