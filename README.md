@@ -340,28 +340,30 @@ See `.env.example` for all required variables.
 
 ## Evaluation
 
-Agent accuracy is measured using a golden dataset evaluation pipeline.
+GTM Ops Agent uses a functional evaluation pipeline to validate agent output quality against golden datasets. Each agent is tested by calling the live GCP API and comparing structured outputs against expected values.
+
+Why functional testing and not RAGAS: GTM Ops Agent is an agentic reasoning system, not a RAG pipeline. RAGAS metrics require retrieved context chunks which agentic systems do not expose. Functional testing is the correct evaluation approach for agentic systems.
 
 Run evaluation against the live GCP API:
 
 ```bash
 source evaluation/venv/bin/activate
-python3 evaluation/evaluate.py
+python3 evaluation/evaluate_functional.py
 ```
 
 Latest results:
 
-| Agent | Accuracy |
-|---|---|
-| Lead Intelligence | 5/5 — 100% |
-| Email Triage | 5/5 — 100% |
-| Meeting Intelligence | 3/3 — 100% |
-| CRM Hygiene | 1/1 — 100% |
-| **Overall** | **14/14 — 100%** |
+| Agent | Test Cases | Result |
+|---|---|---|
+| Lead Intelligence | 5 | 5/5 passed |
+| Email Triage | 5 | 5/5 passed |
+| Meeting Intelligence | 3 | 3/3 passed |
+| CRM Hygiene | 1 | 1/1 passed |
+| **Overall** | **14** | **14/14 passed** |
 
 Golden datasets are in `evaluation/datasets/`. Results are saved to `evaluation/report.json` after each run.
 
-**Note:** Evaluation uses a separate isolated virtual environment (`evaluation/venv/`) to avoid dependency conflicts with the main project.
+**Note:** Evaluation runs in an isolated virtual environment (`evaluation/venv/`) to avoid dependency conflicts with the main project.
 
 
 ## Author
