@@ -336,12 +336,6 @@ See `.env.example` for all required variables.
 
 ---
 
-## Author
-
-Keshav Jha — AI Engineer, Erlangen Germany
-GitHub: https://github.com/Keshav0781
-Email: itskeshavjha1996@gmail.com
-
 ---
 
 ## Evaluation
@@ -368,3 +362,10 @@ Latest results:
 Golden datasets are in `evaluation/datasets/`. Results are saved to `evaluation/report.json` after each run.
 
 **Note:** Evaluation uses a separate isolated virtual environment (`evaluation/venv/`) to avoid dependency conflicts with the main project.
+
+
+## Author
+
+Keshav Jha — AI Engineer, Erlangen Germany
+GitHub: https://github.com/Keshav0781
+Email: itskeshavjha1996@gmail.com
