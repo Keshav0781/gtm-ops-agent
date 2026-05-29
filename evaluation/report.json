@@ -1,0 +1,32 @@
+{
+  "run_at": "2026-05-29T02:39:55.244718",
+  "results": [
+    {
+      "agent": "Lead Intelligence",
+      "passed": 5,
+      "total": 5,
+      "accuracy": 100.0
+    },
+    {
+      "agent": "Email Triage",
+      "passed": 4,
+      "total": 5,
+      "accuracy": 80.0
+    },
+    {
+      "agent": "Meeting Intelligence",
+      "passed": 3,
+      "total": 3,
+      "accuracy": 100.0
+    },
+    {
+      "agent": "CRM Hygiene",
+      "passed": 1,
+      "total": 1,
+      "accuracy": 100.0
+    }
+  ],
+  "overall_accuracy": 92.9,
+  "total_passed": 13,
+  "total_cases": 14
+}

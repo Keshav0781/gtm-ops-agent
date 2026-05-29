@@ -1,0 +1,47 @@
+[
+  {
+    "input": {
+      "meeting_title": "Q2 Sales Review",
+      "meeting_date": "2026-05-29",
+      "attendees": "John (CEO), Sarah (Sales Lead), Michael (Account Manager)",
+      "transcript": "John: Let's review Q2 performance. Sarah, how did we do? Sarah: We closed 12 deals worth 450k total. Three deals slipped to Q3. Michael: The Bosch deal slipped because they need legal approval. John: Ok, Michael you need to follow up with Bosch legal team by Friday. Sarah, please prepare Q3 forecast by end of next week. We also decided to hire two more account managers. John: Any blockers? Michael: We need the new pricing deck before we can close the SAP deal.",
+      "duration_minutes": 30
+    },
+    "expected": {
+      "meeting_type": ["sales", "review"],
+      "action_items_count_min": 2,
+      "has_summary": true,
+      "has_slack_message": true
+    }
+  },
+  {
+    "input": {
+      "meeting_title": "Product Roadmap Planning",
+      "meeting_date": "2026-05-29",
+      "attendees": "Anna (CTO), Klaus (Product Manager), Lisa (Engineer)",
+      "transcript": "Anna: We need to prioritize the dashboard redesign for Q3. Klaus: I agree, customers have been complaining about the UI. Lisa: I can start the redesign next sprint but I need the new design mockups from the design team first. Anna: Klaus, please get the mockups from design team by Monday. Lisa, once you have mockups start implementation. Klaus: We also decided to delay the mobile app to Q4. Anna: Any blockers? Lisa: The API documentation is outdated, it is slowing down development.",
+      "duration_minutes": 45
+    },
+    "expected": {
+      "meeting_type": ["product", "planning"],
+      "action_items_count_min": 2,
+      "has_summary": true,
+      "has_slack_message": true
+    }
+  },
+  {
+    "input": {
+      "meeting_title": "Customer Onboarding Call",
+      "meeting_date": "2026-05-29",
+      "attendees": "Sarah (Account Manager), Thomas (Customer CTO)",
+      "transcript": "Sarah: Welcome Thomas, today we will walk you through the platform setup. Thomas: Great, we are excited to get started. Sarah: First step is to connect your CRM data. Thomas: We use HubSpot. Sarah: Perfect, I will send you the HubSpot integration guide after this call. Thomas: We also need SSO setup for our team. Sarah: I will raise a ticket with our engineering team for SSO setup this week.",
+      "duration_minutes": 30
+    },
+    "expected": {
+      "meeting_type": ["customer", "onboarding", "client_call", "client"],
+      "action_items_count_min": 2,
+      "has_summary": true,
+      "has_slack_message": true
+    }
+  }
+]

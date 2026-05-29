@@ -26,12 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 def get_llm():
-    """
-    Dual LLM routing — same pattern as Lead Intelligence.
-    Groq for speed, Ollama for GDPR compliance.
-    Email content is sensitive — Ollama option
-    ensures data never leaves company network.
-    """
     provider = os.getenv("DEFAULT_LLM_PROVIDER", "groq")
     if provider == "ollama":
         logger.info("Using Ollama — local GDPR compliant LLM")
@@ -53,29 +47,37 @@ def get_llm():
 CLASSIFY_PROMPT = ChatPromptTemplate.from_messages([
     (
         "system",
-        """You are an expert email classifier for a B2B 
+        """You are an expert email classifier for a B2B
         software company.
-        
-        Classify emails into exactly one of these types:
-        
+
+        Classify emails into exactly one type that best
+        describes the email. Common types include:
+
         SALES — potential customer interested in buying
         SUPPORT — existing customer needs help
         PARTNERSHIP — another company wants to collaborate
         PRESS — journalist or media inquiry
         FINANCE — invoice, payment, or billing related
         SPAM — irrelevant or unsolicited
-        
+        RECRUITING — job application or candidate inquiry
+        INVESTOR — investment or funding inquiry
+
+        If the email does not fit any of the above types,
+        create a short descriptive uppercase label that
+        best describes it. For example: LEGAL, VENDOR,
+        COMPLAINT, FEEDBACK etc.
+
         Priority levels:
         HIGH — needs response within 2 hours
         MEDIUM — needs response within 24 hours
         LOW — needs response within 72 hours
-        
+
         Sentiment:
         POSITIVE — excited, interested, happy
         NEUTRAL — informational, no strong emotion
         NEGATIVE — frustrated, angry, complaining
         URGENT — time-sensitive, emergency language
-        
+
         Always respond in this exact format:
         CLASSIFICATION: [type]
         PRIORITY: [level]
@@ -85,11 +87,11 @@ CLASSIFY_PROMPT = ChatPromptTemplate.from_messages([
     (
         "human",
         """Classify this email:
-        
+
         From: {sender_email}
         Subject: {subject}
         Body: {body}
-        
+
         Provide classification following exact format."""
     )
 ])
@@ -98,12 +100,11 @@ CLASSIFY_PROMPT = ChatPromptTemplate.from_messages([
 def parse_classification_response(response_text: str) -> dict:
     """
     Parses LLM classification response.
-    Same parsing pattern as Lead Intelligence nodes.
-    Consistent across all agents — any engineer
-    reading this immediately understands it.
+    No hardcoded valid list — LLM decides the category.
+    Falls back to UNKNOWN only if response is empty.
     """
     result = {
-        "classification": "SUPPORT",
+        "classification": "UNKNOWN",
         "priority": "MEDIUM",
         "sentiment": "NEUTRAL",
         "classification_reasoning": response_text
@@ -116,11 +117,7 @@ def parse_classification_response(response_text: str) -> dict:
             value = line.replace(
                 "CLASSIFICATION:", ""
             ).strip().upper()
-            valid = [
-                "SALES", "SUPPORT", "PARTNERSHIP",
-                "PRESS", "FINANCE", "SPAM"
-            ]
-            if value in valid:
+            if value:
                 result["classification"] = value
 
         elif line.startswith("PRIORITY:"):
@@ -149,27 +146,6 @@ def parse_classification_response(response_text: str) -> dict:
 
 
 async def classify_email(state: EmailState) -> EmailState:
-    """
-    Node 1 — Classify incoming email.
-
-    What it does:
-    1. Validates email has minimum required data
-    2. Sends to LLM for classification
-    3. Parses structured response
-    4. Updates state with classification
-
-    Input state fields used:
-        sender_email, subject, body
-
-    Output state fields added:
-        classification, priority,
-        sentiment, classification_reasoning
-    """
-
-    # ==========================================
-    # Step 1 — Validate minimum required data
-    # Cannot classify without email body
-    # ==========================================
     if not state.get("body") and not state.get("subject"):
         logger.error(
             f"[{state.get('request_id')}] "
@@ -186,9 +162,6 @@ async def classify_email(state: EmailState) -> EmailState:
         f"{state.get('sender_email', 'unknown')}"
     )
 
-    # ==========================================
-    # Step 2 — Call LLM for classification
-    # ==========================================
     try:
         llm = get_llm()
         chain = CLASSIFY_PROMPT | llm
@@ -203,16 +176,10 @@ async def classify_email(state: EmailState) -> EmailState:
             "body": state.get("body", "No body")
         })
 
-        # ==========================================
-        # Step 3 — Parse classification response
-        # ==========================================
         classification_data = parse_classification_response(
             response.content
         )
 
-        # ==========================================
-        # Step 4 — Update state
-        # ==========================================
         state["classification"] = classification_data[
             "classification"
         ]
@@ -235,8 +202,6 @@ async def classify_email(state: EmailState) -> EmailState:
             f"[{state.get('request_id')}] "
             f"Node 1: Classification failed — {str(e)}"
         )
-        # Default to SUPPORT on failure
-        # Better than losing the email entirely
         state["classification"] = "SUPPORT"
         state["priority"] = "MEDIUM"
         state["sentiment"] = "NEUTRAL"

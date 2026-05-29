@@ -1,0 +1,51 @@
+[
+  {
+    "input": {
+      "deals": [
+        {
+          "deal_id": "D001",
+          "deal_name": "Bosch Analytics Platform",
+          "company": "Bosch GmbH",
+          "owner": "Michael",
+          "stage": "Negotiation",
+          "deal_value": 85000,
+          "contact_email": "thomas@bosch.com",
+          "contact_phone": "+49123456789",
+          "last_contact_date": "2026-03-01",
+          "stage_changed_date": "2026-03-01"
+        },
+        {
+          "deal_id": "D002",
+          "deal_name": "SAP Integration Deal",
+          "company": "SAP SE",
+          "owner": "Sarah",
+          "stage": "Proposal",
+          "deal_value": 120000,
+          "contact_email": "klaus@sap.com",
+          "contact_phone": "+49987654321",
+          "last_contact_date": "2026-05-20",
+          "stage_changed_date": "2026-05-20"
+        },
+        {
+          "deal_id": "D003",
+          "deal_name": "Siemens Dashboard",
+          "company": "Siemens AG",
+          "owner": "Michael",
+          "stage": "Discovery",
+          "deal_value": 45000,
+          "contact_email": "anna@siemens.com",
+          "contact_phone": "+49111222333",
+          "last_contact_date": "2026-02-15",
+          "stage_changed_date": "2026-02-15"
+        }
+      ],
+      "scan_date": "2026-05-29"
+    },
+    "expected": {
+      "total_deals_count": 3,
+      "problematic_deals_min": 1,
+      "has_owner_notifications": true,
+      "has_scan_summary": true
+    }
+  }
+]

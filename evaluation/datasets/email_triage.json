@@ -1,0 +1,72 @@
+[
+  {
+    "input": {
+      "sender_email": "partner@hubspot.com",
+      "sender_name": "Sarah Johnson",
+      "subject": "Partnership opportunity between HubSpot and DataSync",
+      "body": "Hi, I am the partnerships lead at HubSpot. We would love to explore a technical integration between our CRM and your analytics platform. Would you be open to a call next week?",
+      "received_at": "2026-05-29T09:00:00"
+    },
+    "expected": {
+      "classification": ["PARTNERSHIP"],
+      "priority": ["HIGH", "MEDIUM"],
+      "route_to": ["partnerships", "sales", "business_development", "ceo", "executive"]
+    }
+  },
+  {
+    "input": {
+      "sender_email": "noreply@randompromo.com",
+      "sender_name": "Promo Bot",
+      "subject": "You won a prize! Click here now!!!",
+      "body": "Congratulations! You have been selected to receive a special prize. Click the link below to claim your reward immediately.",
+      "received_at": "2026-05-29T09:05:00"
+    },
+    "expected": {
+      "classification": ["SPAM"],
+      "priority": ["LOW"],
+      "route_to": ["spam", "ignore"]
+    }
+  },
+  {
+    "input": {
+      "sender_email": "cto@startupberlin.de",
+      "sender_name": "Michael Braun",
+      "subject": "Urgent: Our analytics dashboard is down",
+      "body": "Hi, we are a paying customer and our entire analytics dashboard has been down for 2 hours. This is impacting our Monday morning sales review. Please help urgently.",
+      "received_at": "2026-05-29T09:10:00"
+    },
+    "expected": {
+      "classification": ["SUPPORT"],
+      "priority": ["HIGH"],
+      "route_to": ["support", "engineering", "technical"]
+    }
+  },
+  {
+    "input": {
+      "sender_email": "investor@sequoia.com",
+      "sender_name": "James Park",
+      "subject": "Investment interest in DataSync",
+      "body": "Hello, I am a partner at Sequoia Capital. We have been following DataSync's growth and would like to explore a potential investment. Could we schedule a call with your CEO this week?",
+      "received_at": "2026-05-29T09:15:00"
+    },
+    "expected": {
+      "classification": ["INVESTOR", "PARTNERSHIP"],
+      "priority": ["HIGH"],
+      "route_to": ["executive", "ceo", "founders", "sales"]
+    }
+  },
+  {
+    "input": {
+      "sender_email": "jobs@candidate.com",
+      "sender_name": "Lisa Mueller",
+      "subject": "Application for Senior Engineer position",
+      "body": "Dear hiring team, I am applying for the Senior Engineer role posted on LinkedIn. I have 5 years of experience in Python and distributed systems. Please find my CV attached.",
+      "received_at": "2026-05-29T09:20:00"
+    },
+    "expected": {
+      "classification": ["RECRUITING"],
+      "priority": ["LOW", "MEDIUM"],
+      "route_to": ["hr", "recruiting", "hiring"]
+    }
+  }
+]

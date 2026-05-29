@@ -1,0 +1,77 @@
+[
+  {
+    "input": {
+      "company_name": "Siemens Healthineers",
+      "contact_name": "Thomas Mueller",
+      "contact_email": "t.mueller@siemens-healthineers.com",
+      "message": "We are looking for analytics solutions for our sales team",
+      "source": "website"
+    },
+    "expected": {
+      "score": ["HIGH", "MEDIUM"],
+      "is_qualified": [true, false],
+      "industry": "healthcare",
+      "draft_email_subject_contains": ["Siemens", "analytics", "sales", "healthcare", "solutions","Healthineers","Analytics","Solutions","Sales","Healthcare"]
+    }
+  },
+  {
+    "input": {
+      "company_name": "Random Blog",
+      "contact_name": "John",
+      "contact_email": "john@randomblog.com",
+      "message": "Just browsing",
+      "source": "website"
+    },
+    "expected": {
+      "score": ["LOW"],
+      "is_qualified": [false],
+      "industry": null,
+      "draft_email_subject_contains": []
+    }
+  },
+  {
+    "input": {
+      "company_name": "Bosch GmbH",
+      "contact_name": "Anna Schmidt",
+      "contact_email": "a.schmidt@bosch.com",
+      "message": "We need better visibility into our B2B sales pipeline",
+      "source": "linkedin"
+    },
+    "expected": {
+      "score": ["HIGH", "MEDIUM"],
+      "is_qualified": [true, false],
+      "industry": "manufacturing",
+      "draft_email_subject_contains": ["Bosch", "sales", "pipeline","Sales","Pipeline","Analytics","analytics"]
+    }
+  },
+  {
+    "input": {
+      "company_name": "SAP SE",
+      "contact_name": "Klaus Weber",
+      "contact_email": "k.weber@sap.com",
+      "message": "Interested in your analytics platform for enterprise use",
+      "source": "referral"
+    },
+    "expected": {
+      "score": ["HIGH", "MEDIUM"],
+      "is_qualified": [true, false],
+      "industry": "software",
+      "draft_email_subject_contains": ["SAP", "enterprise", "analytics","Enterprise","Analytics","Platform","platform"]
+    }
+  },
+  {
+    "input": {
+      "company_name": "Local Bakery Berlin",
+      "contact_name": "Hans",
+      "contact_email": "hans@localbakery.de",
+      "message": "Hi",
+      "source": "website"
+    },
+    "expected": {
+      "score": ["LOW"],
+      "is_qualified": [false],
+      "industry": null,
+      "draft_email_subject_contains": []
+    }
+  }
+]

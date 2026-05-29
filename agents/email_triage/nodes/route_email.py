@@ -54,7 +54,29 @@ ROUTING_RULES = {
         "route_to": "ignore",
         "slack_channel": None,
         "reason": "Classified as spam — no action needed"
+    },
+    "RECRUITING": {
+        "route_to": "hr",
+        "slack_channel": "#recruiting",
+        "reason": "Job application requires HR team review"
+    },
+    "INVESTOR": {
+        "route_to": "ceo",
+        "slack_channel": "#investor-relations",
+        "reason": "Investment inquiry requires CEO attention"
     }
+}
+
+# ==========================================
+# Default fallback for any classification
+# not in ROUTING_RULES above.
+# Ensures no email is ever lost or silently
+# misrouted regardless of what LLM returns.
+# ==========================================
+DEFAULT_ROUTING = {
+    "route_to": "general",
+    "slack_channel": "#general-inbox",
+    "reason": "Unrecognised email type — requires manual review"
 }
 
 
@@ -72,12 +94,12 @@ def route_email(state: EmailState) -> EmailState:
     LLM introduces unnecessary variability
     for something that has clear rules.
 
-
     What it does:
     1. Checks if previous nodes failed
     2. Looks up routing rules for classification
-    3. Adjusts routing for HIGH priority emails
-    4. Updates state with routing decision
+    3. Falls back to general inbox for unknown types
+    4. Adjusts routing for HIGH priority emails
+    5. Updates state with routing decision
 
     Input state fields used:
         classification, priority,
@@ -100,7 +122,7 @@ def route_email(state: EmailState) -> EmailState:
         )
         return state
 
-    classification = state.get("classification", "SUPPORT")
+    classification = state.get("classification", "UNKNOWN")
     priority = state.get("priority", "MEDIUM")
     requires_immediate = state.get(
         "requires_immediate_action", False
@@ -114,11 +136,10 @@ def route_email(state: EmailState) -> EmailState:
 
     # ==========================================
     # Step 2 — Apply routing rules
+    # Falls back to DEFAULT_ROUTING for any
+    # classification not in ROUTING_RULES
     # ==========================================
-    routing = ROUTING_RULES.get(
-        classification,
-        ROUTING_RULES["SUPPORT"]
-    )
+    routing = ROUTING_RULES.get(classification, DEFAULT_ROUTING)
 
     state["route_to"] = routing["route_to"]
     state["slack_channel"] = routing["slack_channel"]
@@ -126,9 +147,8 @@ def route_email(state: EmailState) -> EmailState:
 
     # ==========================================
     # Step 3 — Escalate HIGH priority emails
-    # If HIGH priority SUPPORT — also notify CEO
-    # If requires immediate action — flag urgently
-    # This is enterprise escalation logic
+    # If HIGH priority and requires immediate
+    # action — flag urgently
     # ==========================================
     if priority == "HIGH" and requires_immediate:
         logger.warning(
