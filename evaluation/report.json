@@ -1,5 +1,5 @@
 {
-  "run_at": "2026-05-29T02:39:55.244718",
+  "run_at": "2026-05-29T03:10:38.717915",
   "results": [
     {
       "agent": "Lead Intelligence",
@@ -9,9 +9,9 @@
     },
     {
       "agent": "Email Triage",
-      "passed": 4,
+      "passed": 5,
       "total": 5,
-      "accuracy": 80.0
+      "accuracy": 100.0
     },
     {
       "agent": "Meeting Intelligence",
@@ -26,7 +26,7 @@
       "accuracy": 100.0
     }
   ],
-  "overall_accuracy": 92.9,
-  "total_passed": 13,
+  "overall_accuracy": 100.0,
+  "total_passed": 14,
   "total_cases": 14
 }
