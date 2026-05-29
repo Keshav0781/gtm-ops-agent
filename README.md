@@ -341,3 +341,30 @@ See `.env.example` for all required variables.
 Keshav Jha — AI Engineer, Erlangen Germany
 GitHub: https://github.com/Keshav0781
 Email: itskeshavjha1996@gmail.com
+
+---
+
+## Evaluation
+
+Agent accuracy is measured using a golden dataset evaluation pipeline.
+
+Run evaluation against the live GCP API:
+
+```bash
+source evaluation/venv/bin/activate
+python3 evaluation/evaluate.py
+```
+
+Latest results:
+
+| Agent | Accuracy |
+|---|---|
+| Lead Intelligence | 5/5 — 100% |
+| Email Triage | 5/5 — 100% |
+| Meeting Intelligence | 3/3 — 100% |
+| CRM Hygiene | 1/1 — 100% |
+| **Overall** | **14/14 — 100%** |
+
+Golden datasets are in `evaluation/datasets/`. Results are saved to `evaluation/report.json` after each run.
+
+**Note:** Evaluation uses a separate isolated virtual environment (`evaluation/venv/`) to avoid dependency conflicts with the main project.
